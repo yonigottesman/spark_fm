@@ -30,16 +30,16 @@ object SparkFM {
 
 
     val movies = spark.read.option("delimiter","::")
-      .csv("/Users/yonatang/recommendation_playground/ml-1m/movies.dat")
+      .csv("ml-1m/movies.dat")
       .toDF("movie_id","title","genres")
 
     val users = spark.read.option("delimiter","::")
-      .csv("/Users/yonatang/recommendation_playground/ml-1m/users.dat")
+      .csv("ml-1m/users.dat")
       .toDF("user_id","gender","age","occupation","zipcode")
 
 
     val ratings = spark.read.option("delimiter","::")
-      .csv("/Users/yonatang/recommendation_playground/ml-1m/ratings.dat")
+      .csv("ml-1m/ratings.dat")
       .toDF("user_id","movie_id","rating","time")
       .withColumn("rating",$"rating".cast(IntegerType))
 
