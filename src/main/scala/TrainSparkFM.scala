@@ -13,7 +13,7 @@ import org.apache.spark.sql.types.IntegerType
 
 
 
-object SparkFM {
+object TrainSparkFM {
 
   lazy val conf = new SparkConf()
     .setAppName("spark_fm")
@@ -37,13 +37,11 @@ object SparkFM {
       .csv("ml-1m/users.dat")
       .toDF("user_id","gender","age","occupation","zipcode")
 
-
     val ratings = spark.read.option("delimiter","::")
-      .csv("ml-1m/ratings.dat")
+      .csv("fatoml-1m/ratings.dat")
       .toDF("user_id","movie_id","rating","time")
       .withColumn("rating",$"rating".cast(IntegerType))
-
-
+    
     val ratingsJoined = ratings
       .join(users,Seq("user_id"))
       .join(movies,Seq("movie_id"))
