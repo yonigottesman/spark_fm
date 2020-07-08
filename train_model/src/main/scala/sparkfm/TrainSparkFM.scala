@@ -95,8 +95,6 @@ object TrainSparkFM {
     val ratingsInput = ratingsJoined
       .select(featureColumns.map(name=>(col(name) + lit(featureOffsets(name))).alias(name)):+$"rating":_*)
 
-    ratingsInput.show(10)
-
     val featureVectorSize = featureSizes.values.sum
 
     //convert rows to sparse vector
@@ -133,17 +131,14 @@ object TrainSparkFM {
 
     model.write.overwrite().save("fmmodel")
 
-    //save embeddings and biases
+    //save embeddings and biases in table format
     val matrixRows = model.factors.rowIter.toSeq.map(_.toArray).zip(model.linear.toArray)
       .zipWithIndex.map { case ((a, b), i) => (i, b, a) }
 
-    val modelDF = spark.sparkContext
+    spark.sparkContext
       .parallelize(matrixRows)
       .toDF("index","bias","embedding")
-
-
-    modelDF.write.mode(SaveMode.Overwrite).option("header","true").parquet("model_raw")
-
+      .write.mode(SaveMode.Overwrite).option("header","true").parquet("model_raw")
 
     spark.close()
 

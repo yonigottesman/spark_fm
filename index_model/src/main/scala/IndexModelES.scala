@@ -34,6 +34,7 @@ object IndexModelES {
     val modelPath = args(2)
 
     val model = spark.read.option("header","true").parquet(modelPath)
+    model.show(4)
 
     val movies = readCsv(ml1mPath + "/movies.dat")
       .toDF("movie_id","title","genres")
@@ -48,6 +49,7 @@ object IndexModelES {
       .withColumn("feature_type",lit("movie"))
       .withColumn("id",concat(lit("movie_"),$"index"))
       .select("id","feature_type","embedding","bias","title")
+    movieDocs.show(4)
 
     movieDocs.saveToEs("recsys",Map("es.mapping.id" -> "id"))
 
@@ -68,7 +70,6 @@ object IndexModelES {
 
 
     val userfeatureColumns = Seq("user_id","age","gender","occupation")
-
     userfeatureColumns.foreach(columnName =>
       usersIndexed
         .dropDuplicates(columnName+"_index")
@@ -76,8 +77,7 @@ object IndexModelES {
         .withColumn("feature_type",lit(columnName))
         .withColumn("id",concat(lit(columnName+"_"),$"index"))
         .select("id","feature_type","embedding","bias")
-        .saveToEs("recsys",Map("es.mapping.id" -> "id"))
-    )
+        .saveToEs("recsys",Map("es.mapping.id" -> "id")))
 
     spark.close()
   }
