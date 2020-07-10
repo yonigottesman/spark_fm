@@ -18,7 +18,7 @@ object TrainSparkFM {
 
   val spark = SparkSession.builder()
     .config(conf)
-    //.master("local[*]")
+    .master("local[*]")
     .getOrCreate()
 
   import spark.implicits._
@@ -66,6 +66,10 @@ object TrainSparkFM {
       .join(moviesIndexed,Seq("movie_id"))
 
 
+    usersIndexed.dropDuplicates("gender").show(10,false)
+    usersIndexed.dropDuplicates("age").show(10,false)
+
+
     val featureColumns = Seq("user_id_index","title_index","age_index","gender_index","occupation_index")
 
     ratingsJoined.select((featureColumns:+"rating").map(col):_*).show(4)
@@ -107,26 +111,42 @@ object TrainSparkFM {
 
     val Array(trainset, testset) = data.randomSplit(Array(0.9, 0.1))
 
+// best
+//    val fm = new FMRegressor()
+//      .setLabelCol("rating")
+//      .setFeaturesCol("features")
+//      .setFactorSize(120)
+//      .setMaxIter(300)
+//      .setRegParam(0.01)
+//      .setStepSize(0.01)
+
+
 
     val fm = new FMRegressor()
       .setLabelCol("rating")
       .setFeaturesCol("features")
       .setFactorSize(120)
+      .setMaxIter(300)
+      .setRegParam(0.01)
       .setStepSize(0.01)
 
 
     val model = fm.fit(trainset)
 
-    val predictions = model.transform(testset)
+    val testPredictions = model.transform(testset)
+    val trainPredictions = model.transform(trainset)
 
     val evaluator = new RegressionEvaluator()
       .setLabelCol("rating")
       .setPredictionCol("prediction")
       .setMetricName("rmse")
 
-    val rmse = evaluator.evaluate(predictions)
 
-    println(s"test rmse = $rmse")
+
+    val testRMSE = evaluator.evaluate(testPredictions)
+    val trainRMSE = evaluator.evaluate(trainPredictions)
+
+    println(s"test rmse = $testRMSE. train rms = $trainRMSE")
 
 
     model.write.overwrite().save("fmmodel")
